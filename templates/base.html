@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - Burial Deed Ocr System</title>
+        {% else %}
+        <title>Welcome to Burial Deed Ocr System</title>
+        {% endif %}
+        {% block head_content %}{% endblock %}
+    </head>
+    <body>
+	    <ul id="navigator">
+            <li><span id="navigator_span">A (not) Very Simple WebUI For Burial Deed OCR</span></li>
+
+            {% if current_user.is_anonymous %}
+            <li class="navigate_item selected_navi_item"><a href="{{ url_for('login') }}">Login</a></li>
+            {% else %}
+            <li class="navigate_item"><a href="{{ url_for('logout') }}">{{ current_user.username }}</a></li>
+            {% endif %}
+
+            {% if navi == "log" %}
+            <li class="navigate_item selected_navi_item"><a href="/">Log</a></li>
+            {% else %}
+            <li class="navigate_item"><a href="/">Log</a></li>
+            {% endif %}
+
+            {% if navi == "results" %}
+            <li class="navigate_item selected_navi_item"><a href="/">Results</a></li>
+            {% else %}
+            <li class="navigate_item"><a href="/">Results</a></li>
+            {% endif %}
+
+            {% if navi == "home" %}
+            <li class="navigate_item selected_navi_item"><a href="/">Upload</a></li>
+            {% else %}
+            <li class="navigate_item"><a href="/">Upload</a></li>
+            {% endif %}
+        </ul>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul style="list-style-type: none;">
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+        {% block body_content %}{% endblock %}
+    </body>
+</html>

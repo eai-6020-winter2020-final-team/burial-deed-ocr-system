@@ -1,5 +1,3 @@
-var trCounter = 0;
-
 function fileSelected(file){
 	var fileName = $(file).val();
 	var selectButton = $("#select_button")[0];
@@ -14,7 +12,7 @@ function fileSelected(file){
 	if(file.files && file.files[0]){
 		var reader = new FileReader();
 		reader.onload = function(evt){
-			previewDiv.innerHTML = '<img src="' + evt.target.result + '"/>';
+			previewDiv.innerHTML = '<img alt="Selected Image" src="' + evt.target.result + '"/>';
 		};
 		reader.readAsDataURL(file.files[0]);
 	}
@@ -25,7 +23,7 @@ $(document).ready(function(){
 		$("input").click();
 	});
 	
-	$("#submit_button").click(function(){
+	$("#submit").click(function(){
 		var fileName = $("#file_uploader").val();
 		var selectButton = $("#select_button")[0];
 		if(!fileName){
@@ -47,34 +45,18 @@ $(document).ready(function(){
 			processData: false,
 			contentType: false,
 			success: function(successData){
-				$("table").css("display", "inline-block");
 				jsonData = JSON.parse(successData);
-				var newTr = "";
-				if(++trCounter % 2){
-					newTr += "<tr>";
-				}else{
-					newTr += '<tr style="background-color: #EDF5D6;">';
+				var resultTable = $("table");
+				resultTable.css("display", "inline-block");
+				var newTr = "<tr>";
+				for(var i in jsonData){
+					newTr += "<td>";
+					newTr += jsonData[i];
+					newTr += "</td>";
 				}
-				newTr += "<td>";
-				newTr += jsonData.fileName;
-				newTr += "</td>";
-				newTr += "<td>";
-				newTr += jsonData.personName;
-				newTr += "</td>";
-				newTr += "<td>";
-				newTr += jsonData.outputV1;
-				newTr += "</td>";
-				newTr += "<td>";
-				newTr += jsonData.outputV2;
-				newTr += "</td>";
-				newTr += "<td>";
-				newTr += jsonData.outputV3;
-				newTr += "</td>";
-				newTr += "<td>";
-				newTr += jsonData.outputV4;
-				newTr += "</td>";
-				newTr += "</tr>"
-				$("table").append($(newTr));
+				newTr += "</tr>";
+				$("td").parent().remove();
+				resultTable.append($(newTr));
 			}
 		});
 	});
