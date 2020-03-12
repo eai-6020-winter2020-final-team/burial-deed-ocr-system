@@ -1,25 +1,25 @@
 {% extends "base.html" %}
 
 {% block head_content %}
-	<script src="/static/jquery-3.4.1.min.js"></script>
-	<script src="/static/main.js"></script>
-	<link rel="stylesheet" type="text/css" href="/static/main.css">
+<script src="/static/jquery-3.4.1.min.js"></script>
+<script src="/static/main.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/main.css">
 {% endblock %}
 
 {% block body_content %}
-	<input type="file" id="file_uploader" onchange="fileSelected(this)">
-	<div id="select_button">Select JPEG File</div>
-	<div id="submit">Submit</div><br/>
-	<div id="preview"></div>
+<input type="file" id="file_uploader" onchange="fileSelected(this)">
+<div id="select_button">Select JPEG File</div>
+<div id="submit">Submit</div><br/>
+<div id="preview"></div>
 
-	<table border="1">
-		<tr>
-			<th>File Name</th>
-			<th>Person Name</th>
-			<th>output_value_1</th>
-			<th>output_value_2</th>
-			<th>output_value_3</th>
-			<th>output_value_4</th>
-		</tr>
-	</table>
+<table border="1">
+	<tr>
+		<th>File Name</th>
+		<th>Person Name</th>
+		<th>output_value_1</th>
+		<th>output_value_2</th>
+		<th>output_value_3</th>
+		<th>output_value_4</th>
+	</tr>
+</table>
 {% endblock %}
