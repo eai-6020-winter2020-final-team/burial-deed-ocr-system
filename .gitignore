@@ -1,3 +1,5 @@
 .db
 ResImages/
 .idea/
+*.nc
+*.DS_store
