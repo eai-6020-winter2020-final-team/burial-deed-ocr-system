@@ -15,7 +15,7 @@
 	{% if current_user.is_anonymous %}
 	<li class="navigate_item selected_navi_item"><a href="{{ url_for('login') }}">Login</a></li>
 	{% else %}
-	<li class="navigate_item"><a href="{{ url_for('logout') }}">{{ current_user.username }}</a></li>
+	<li class="navigate_item"><a href="{{ url_for('logout') }}">Logout {{ current_user.username }}</a></li>
 	{% endif %}
 
 	{% if navi == "log" %}
@@ -24,10 +24,10 @@
 	<li class="navigate_item"><a href="/">Log</a></li>
 	{% endif %}
 
-	{% if navi == "results" %}
-	<li class="navigate_item selected_navi_item"><a href="/">Results</a></li>
+	{% if navi == "records" %}
+	<li class="navigate_item selected_navi_item"><a href="/records/">Records</a></li>
 	{% else %}
-	<li class="navigate_item"><a href="/">Results</a></li>
+	<li class="navigate_item"><a href="/records/">Records</a></li>
 	{% endif %}
 
 	{% if navi == "home" %}

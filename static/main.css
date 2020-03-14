@@ -6,7 +6,6 @@ img {
 }
 
 table {
-	display: none;
 	border: 1px solid grey;
 	border-collapse: collapse;
 	margin: 20px;
@@ -115,4 +114,8 @@ body {
 
 #preview {
 	margin: 20px;
+}
+
+#result_table {
+	display: none;
 }

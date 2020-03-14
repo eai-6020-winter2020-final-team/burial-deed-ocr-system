@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-def main_function(file):
+def main_function(file) -> dict:
 	"""
 	Main Recognition function
 	Inputs:
@@ -16,7 +16,7 @@ def main_function(file):
 	return result_dict
 
 #TODO:
-def preprocess(img):
+def preprocess(img) -> np.ndarray:
 	"""
 	Preprocess Image
 	Inputs:
