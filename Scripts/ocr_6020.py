@@ -44,6 +44,7 @@ class CardOcr(object):
 
     def __init__(self, img_path):
         self.image = cv2.imread(img_path, 1)
+        self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
     def show_image(self):
         """
@@ -91,15 +92,23 @@ class CardOcr(object):
                 arr.append(pixel)
         return arr
 
+    def format_input(self):
+        """
+        convert image into input data
+        :return: np.array
+        """
+        input_img = np.array(self.img_to_arr(300, 300))
+        input_img = input_img.reshape(1, 300, 300, 1)
+
+        return input_img
+
     def form_type(self):
         """
         Form classification for burial cards
         :return: string
         """
         model_form = tf.keras.models.load_model('model_form.h5')
-        input_img = np.array(self.img_to_arr(500, 500))
-        input_img = input_img.reshape(1, 500, 500, 1)
-        ret = model_form.predict(input_img)
+        ret = model_form.predict(self.format_input())
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
             return 'A'
@@ -116,9 +125,7 @@ class CardOcr(object):
         :return: string
         """
         model_hw = tf.keras.models.load_model('model_hw.h5')
-        input_img = np.array(self.img_to_arr(500, 500))
-        input_img = input_img.reshape(1, 500, 500, 1)
-        ret = model_hw.predict(input_img)
+        ret = model_hw.predict(self.format_input())
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
             return 'N'
@@ -131,31 +138,20 @@ class CardOcr(object):
         :return: string
         """
         model_f = tf.keras.models.load_model('model_f.h5')
-        input_img = np.array(self.img_to_arr(500, 500))
-        input_img = input_img.reshape(1, 500, 500, 1)
-        ret = model_f.predict(input_img)
+        ret = model_f.predict(self.format_input())
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
             return 'N'
         else:
             return 'Y'
 
-
-class CardDetectA(CardOcr):
-    """
-    OCR for card recognition
-    """
-    def __init__(self, img_path):
-        super().__init__(img_path)
-        self.image = cv2.imread(img_path, 1)
-        self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-
-    # detect first line and draw Auxiliary line
     def first_line(self):
         # Image Binarization
-        ret, thresh1 = cv2.threshold(self.gray, 200, 255, cv2.THRESH_BINARY)
+        ret, th1 = cv2.threshold(self.gray, 200, 255, cv2.THRESH_BINARY)
+        th3 = cv2.adaptiveThreshold(th1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                    cv2.THRESH_BINARY, 11, 2)
         # Median filter
-        blur = cv2.medianBlur(thresh1, 3)  # ksize: 3*3
+        blur = cv2.medianBlur(th3, 3)  # ksize: 3*3
         blur = cv2.medianBlur(blur, 3)
         h, w = self.gray.shape
         # horizontal line
@@ -168,8 +164,24 @@ class CardDetectA(CardOcr):
         if horizontal_lines and horizontal_lines[0][1] < 150:
             first_line = horizontal_lines[0]
         else:
-            first_line = [0, 104, 930, 104]
+            first_line = [0, 104, w, 104]
+
+        return first_line
+
+
+class CardDetectA(CardOcr):
+    """
+    OCR for card recognition
+    """
+    def __init__(self, img_path):
+        super().__init__(img_path)
+        self.image = cv2.imread(img_path, 1)
+        self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+
+    # detect first line and draw Auxiliary line
+    def draw_auxiliary(self):
         # plot lines
+        first_line = self.first_line()
         lines = [[23, 30, 23, 239], [930, 30, 930, 239]]
         first_line[1] -= 55
         first_line[3] -= 55
@@ -181,7 +193,7 @@ class CardDetectA(CardOcr):
 
     # detect cell
     def find_form(self):
-        image = self.first_line()
+        image = self.draw_auxiliary()
         self.gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # Image Binarization
@@ -285,8 +297,9 @@ class CardDetectA(CardOcr):
     # extract text:
     def ocr_text(self):
         rects = self.cell_detect()
-        thresh = self.gray
-
+        ret, th1 = cv2.threshold(self.gray, 200, 255, cv2.THRESH_BINARY)
+        thresh = cv2.adaptiveThreshold(th1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                       cv2.THRESH_BINARY, 11, 2)
         target = [0, 2, 3, 4, 5]
         file_name = ['Name', 'Date of interment', 'Section', 'Lot', 'GR']
         special_char = '‘’,|-_<"=;«“&—]uv'
@@ -327,6 +340,29 @@ class CardDetectA(CardOcr):
         return result
 
 
+def cls_dict(image):
+    image_info = {}
+    card = CardDetectA(image)
+    image_info['file_name'] = image
+
+    hw = card.flag_hw()
+    image_info['handwriting'] = hw
+
+    fraction = card.flag_f()
+    image_info['fraction'] = fraction
+
+    card_type = card.card_type()
+    image_info['card_type'] = card_type
+
+    if card_type == 'Burial':
+        form = card.form_type()
+        image_info['form'] = form
+    else:
+        image_info['form'] = 'NaN'
+
+    return image_info
+
+
 def main():
     """
     create dataframe
@@ -335,37 +371,21 @@ def main():
     path = 'All_Data/'
     files = sorted(os.listdir(path))
     ret = []
-    temp = []
 
     for i in files:
-        img_info = [i]
-        new_card = CardDetectA(path + i)
-
-        hw = new_card.flag_hw()
-        img_info.append(hw)
-
-        fraction = new_card.flag_f()
-        img_info.append(fraction)
-
-        cla = new_card.card_type()
-        img_info.append(cla)
-        if cla == 'Burial':
-            form = new_card.form_type()
-            img_info.append(form)
-            if form == 'A':
-                ret = new_card.ocr_text()
-                temp.append(ret)
-            else:
-                pass
+        card_info = cls_dict(path+i)
+        ret.append(card_info)
+        if card_info['form'] == 'A':
+            card = CardDetectA(path+i)
+            card_ret = card.ocr_text()
+            ret.append(card_ret)
         else:
-            img_info.append('NaN')
+            pass
 
-        ret.append(img_info)
+    df = pd.DataFrame(ret, columns=['file_name', 'handwriting', 'fraction', 'card_type', 'form_type',
+                                    'Name', 'Date of interment', 'Section', 'Lot', 'GR', 'Avg_conf'])
 
-    df = pd.DataFrame(ret, columns=['file_name', 'handwriting', 'fraction', 'card_type', 'form_type'])
-    form_a = pd.DataFrame(temp, columns=['Name', 'Date of interment', 'Section', 'Lot', 'GR', 'Avg_conf'])
-
-    return df.to_csv('classification.csv'), form_a.to_csv('result.csv')
+    return df.to_csv('result.csv')
 
 
 if __name__ == '__main__':
