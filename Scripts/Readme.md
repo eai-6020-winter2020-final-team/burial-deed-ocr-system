@@ -2,6 +2,12 @@
 
 ## Introduction
 
+### files
+
+`Burial_recognizer_form_bc.ipynb` shows pipeline of recognize burial B form step by step;	
+`Deed_recognizer_form_b.ipynb` shows pipeline of recognize Deed B form step by step;	 	
+`Deed_recognizer_form_c.ipynb` shows pipeline of recognize Deed C form step by step;	
+
 ### import
 
 ```python
