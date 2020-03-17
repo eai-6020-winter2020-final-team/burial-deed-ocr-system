@@ -46,13 +46,14 @@ class CardOcr(object):
         self.image = cv2.imread(img_path, 1)
         self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
-    def show_image(self):
+    def show_image(self, code=cv2.COLOR_BGR2RGB):
         """
-
+        code is plot color
         :return: image
         """
+        cv_rgb = cv2.cvtColor(self.image, code)
         fig, ax = plt.subplots(figsize=(16, 10))
-        ax.imshow(self.image)
+        ax.imshow(cv_rgb)
         fig.show()
 
     def card_type(self):
@@ -145,15 +146,27 @@ class CardOcr(object):
         else:
             return 'Y'
 
-    def first_line(self):
-        # Image Binarization
+    def preproc_img(self):
+        """
+        pre-process image:
+        :return:
+        """
         ret, th1 = cv2.threshold(self.gray, 200, 255, cv2.THRESH_BINARY)
         th3 = cv2.adaptiveThreshold(th1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                     cv2.THRESH_BINARY, 11, 2)
-        # Median filter
         blur = cv2.medianBlur(th3, 3)  # ksize: 3*3
-        blur = cv2.medianBlur(blur, 3)
-        h, w = self.gray.shape
+        self.image = cv2.medianBlur(blur, 3)
+
+        return self.image
+
+    def first_line(self):
+        """
+        detect first line of image
+        :return:
+        """
+        blur = self.preproc_img()
+
+        h, w = blur.shape
         # horizontal line
         horizontal_lines = []
         for i in range(h - 1):
@@ -162,27 +175,35 @@ class CardOcr(object):
                 # plot the line
                 horizontal_lines.append([0, i, w, i])
         if horizontal_lines and horizontal_lines[0][1] < 150:
-            first_line = horizontal_lines[0]
+            if horizontal_lines[0][1] > 50:
+                first_line = horizontal_lines[0]
+            else:
+                first_line = horizontal_lines[1]
         else:
             first_line = [0, 104, w, 104]
 
         return first_line
 
 
-class CardDetectA(CardOcr):
+class CardDetect(CardOcr):
     """
     OCR for card recognition
     """
     def __init__(self, img_path):
         super().__init__(img_path)
         self.image = cv2.imread(img_path, 1)
-        self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
-    # detect first line and draw Auxiliary line
+    # draw Auxiliary line
     def draw_auxiliary(self):
+        """
+        draw auxiliary to crop the cell
+        :return: image
+        """
         # plot lines
+        proc_image = self.preproc_img()
+        h, w = proc_image.shape
         first_line = self.first_line()
-        lines = [[23, 30, 23, 239], [930, 30, 930, 239]]
+        lines = [[23, 30, 23, h], [w-50, 30, w-50, h]]
         first_line[1] -= 55
         first_line[3] -= 55
         lines.append(first_line)
@@ -191,13 +212,42 @@ class CardDetectA(CardOcr):
 
         return self.image
 
+    def draw_auxiliary_form_c(self):
+        """
+        draw lines for form C
+        :return: image
+        """
+        first_line = self.first_line()
+        image = self.draw_auxiliary()
+        lines = [first_line]
+
+        i = 0
+        while i < 7:
+            temp = first_line
+            first_line[1] += 60
+            first_line[3] += 60
+            line = temp.copy()
+            lines.append(line)
+            i += 1
+
+        for l in lines:
+            self.image = cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 2)
+
+        return self.image
+
     # detect cell
     def find_form(self):
-        image = self.draw_auxiliary()
-        self.gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        """
+        find horizontal lines and vertical lines
+        :return: array, image
+        """
+        if self.form_type() == 'C':
+            image = self.draw_auxiliary_form_c()
+        else:
+            image = self.draw_auxiliary()
 
         # Image Binarization
-        binary = cv2.adaptiveThreshold(~self.gray, 255,
+        binary = cv2.adaptiveThreshold(~image, 255,
                                        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, -10)
         rows, cols = binary.shape
         scale = 20
@@ -219,8 +269,12 @@ class CardDetectA(CardOcr):
         merge = cv2.add(dilatedcol, dilatedrow)
         return vertex, merge
 
-    # get the coordinate
-    def get_coordinate(self):
+    # get the coordinate for Burial form A
+    def get_coordinate_form_a(self):
+        """
+        get coordinate for burial form A
+        :return: list
+        """
         a, b = self.find_form()
         ys, xs = np.where(a > 0)
         # create coordinate
@@ -254,10 +308,37 @@ class CardDetectA(CardOcr):
 
         return x_list, y_list
 
-    # find cell
-    def cell_detect(self):
+    def get_coordinate_other(self):
+        a, b = self.find_form()
+        ys, xs = np.where(a > 0)
+        # create coordinate
+        x_list, y_list = [], []
 
-        x_list, y_list = self.get_coordinate()
+        # sort list
+        xs, ys = np.sort(xs), np.sort(ys)
+
+        for i in range(len(xs) - 1):
+            if xs[i+1] - xs[i] > 20:
+                x_list.append(xs[i])
+        x_list.append(xs[i])
+        if x_list[0] > 30:
+            x_list.append(24)
+        x_list = sorted(x_list)
+
+        for i in range(len(ys) - 1):
+            if ys[i+1] - ys[i] > 20:
+                y_list.append(ys[i])
+        y_list.append(ys[i])
+
+        return x_list, y_list
+
+    # find cell
+    def cell_detect_form_a(self):
+        """
+        find cell for form a
+        :return: list
+        """
+        x_list, y_list = self.get_coordinate_form_a()
         # print(x_list)
         # crop the image by second line
         try:
@@ -289,17 +370,39 @@ class CardDetectA(CardOcr):
 
         # plot rect:
         for rect in rects:
-            self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (255, 0, 0), 2)
+            self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (255, 255, 255), 2)
 
         # print(rects)
         return rects
 
+    def cell_detect_other(self):
+        """
+        find cell for other form except Form A
+        :return: list
+        """
+        x_list, y_list = self.get_coordinate_other()
+        rects = []
+
+        try:
+            for i in range(len(x_list) - 1):
+                for j in range(len(y_list) - 1):
+                    rects.append((x_list[i], y_list[j], x_list[i + 1], y_list[j + 1]))
+
+        except IndexError:
+            pass
+
+        rect_ret = rects[:7]
+        # plot rect:
+        for rect in rect_ret:
+            self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (255, 255, 255), 2)
+
+        # print(rects)
+        return rect_ret
+
     # extract text:
-    def ocr_text(self):
-        rects = self.cell_detect()
-        ret, th1 = cv2.threshold(self.gray, 200, 255, cv2.THRESH_BINARY)
-        thresh = cv2.adaptiveThreshold(th1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                       cv2.THRESH_BINARY, 11, 2)
+    def ocr_text_form_a(self):
+        rects = self.cell_detect_form_a()
+        thresh = self.preproc_img()
         target = [0, 2, 3, 4, 5]
         file_name = ['Name', 'Date of interment', 'Section', 'Lot', 'GR']
         special_char = '‘’,|-_<"=;«“&—]uv'
@@ -339,10 +442,56 @@ class CardDetectA(CardOcr):
 
         return result
 
+    def ocr_text_form_bc(self):
+        rectangle = self.cell_detect_other()
+        rects = rectangle[:4]
+        image = self.preproc_img()
+        # print(rects)
+        file_name = ['Name', 'Lot-Sec-Gr-Ter', 'Date of Burial']
+        special_char = '‘’,|-_<"=;«“&—]uv'
+        result = {}
+        temp = []
+        for i in range(4):
+            rect1 = rects[i]
+            # print(rect1)
+            detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
+            text = pytesseract.image_to_string(detect_img, config='-l eng --psm 10')
+            text = ''.join([char for char in text if char not in special_char])
+            temp.append(text)
+
+        result[file_name[0]] = temp[0]
+        result[file_name[1]] = temp[1:3]
+        result[file_name[2]] = temp[3:]
+
+        return result
+
+    def ocr_text_deed(self):
+        rects = self.cell_detect_other()
+        image = self.preproc_img()
+        # print(rects)
+        file_name = ['Name', 'Lot-Sec-Gr', 'Deed No. & Date', 'Comments']
+        special_char = '‘’,|-_<"=;«“&—]uv'
+        result = {}
+        temp = []
+        for i in range(7):
+            rect1 = rects[i]
+            # print(rect1)
+            detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
+            text = pytesseract.image_to_string(detect_img, config='-l eng --psm 10')
+            text = ''.join([char for char in text if char not in special_char])
+            temp.append(text)
+
+        result[file_name[0]] = temp[0]
+        result[file_name[1]] = temp[1:3]
+        result[file_name[2]] = temp[3:5]
+        result[file_name[3]] = temp[5:]
+
+        return result
+
 
 def cls_dict(image):
     image_info = {}
-    card = CardDetectA(image)
+    card = CardDetect(image)
     image_info['file_name'] = image
 
     hw = card.flag_hw()
@@ -354,13 +503,25 @@ def cls_dict(image):
     card_type = card.card_type()
     image_info['card_type'] = card_type
 
-    if card_type == 'Burial':
-        form = card.form_type()
-        image_info['form'] = form
-    else:
-        image_info['form'] = 'NaN'
+    form = card.form_type()
+    image_info['form'] = form
 
     return image_info
+
+
+def text_dict(image):
+    image_ret = {}
+    card = CardDetect(image)
+    card_type = card.card_type()
+    form = card.form_type()
+    if card_type == 'Burial' and form == 'A':
+        image_ret = card.ocr_text_form_a()
+    elif card_type == 'Burial' and form != 'A':
+        image_ret = card.ocr_text_form_bc()
+    else:
+        image_ret = card.ocr_text_deed()
+
+    return image_ret
 
 
 def main():
@@ -376,7 +537,7 @@ def main():
         card_info = cls_dict(path+i)
         ret.append(card_info)
         if card_info['form'] == 'A':
-            card = CardDetectA(path+i)
+            card = CardDetect(path+i)
             card_ret = card.ocr_text()
             ret.append(card_ret)
         else:
