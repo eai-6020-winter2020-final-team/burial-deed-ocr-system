@@ -189,6 +189,7 @@ class CardDetect(CardOcr):
     """
     OCR for card recognition
     """
+
     def __init__(self, img_path):
         super().__init__(img_path)
         self.image = cv2.imread(img_path, 1)
@@ -203,7 +204,7 @@ class CardDetect(CardOcr):
         proc_image = self.preproc_img()
         h, w = proc_image.shape
         first_line = self.first_line()
-        lines = [[23, 30, 23, h], [w-50, 30, w-50, h]]
+        lines = [[23, 30, 23, h], [w - 50, 30, w - 50, h]]
         first_line[1] -= 55
         first_line[3] -= 55
         lines.append(first_line)
@@ -284,7 +285,7 @@ class CardDetect(CardOcr):
         xs, ys = np.sort(xs), np.sort(ys)
 
         for i in range(len(xs) - 1):
-            if xs[i+1] - xs[i] > 20:
+            if xs[i + 1] - xs[i] > 20:
                 x_list.append(xs[i])
         x_list.append(xs[i])
         if x_list[0] > 30:
@@ -292,7 +293,7 @@ class CardDetect(CardOcr):
         x_list = sorted(x_list)
 
         for i in range(len(ys) - 1):
-            if ys[i+1] - ys[i] > 20:
+            if ys[i + 1] - ys[i] > 20:
                 y_list.append(ys[i])
         y_list.append(ys[i])
         try:
@@ -318,7 +319,7 @@ class CardDetect(CardOcr):
         xs, ys = np.sort(xs), np.sort(ys)
 
         for i in range(len(xs) - 1):
-            if xs[i+1] - xs[i] > 20:
+            if xs[i + 1] - xs[i] > 20:
                 x_list.append(xs[i])
         x_list.append(xs[i])
         if x_list[0] > 30:
@@ -326,7 +327,7 @@ class CardDetect(CardOcr):
         x_list = sorted(x_list)
 
         for i in range(len(ys) - 1):
-            if ys[i+1] - ys[i] > 20:
+            if ys[i + 1] - ys[i] > 20:
                 y_list.append(ys[i])
         y_list.append(ys[i])
 
@@ -348,10 +349,10 @@ class CardDetect(CardOcr):
         rects = []
 
         try:
-            first_line = [x_list[0], x_list[-3]-25, x_list[-1]]
+            first_line = [x_list[0], x_list[-3] - 25, x_list[-1]]
             for i in range(0, len(first_line) - 1):
                 for j in range(len(y_list[:2]) - 1):
-                    rects.append((first_line[i], y_list[j], first_line[i + 1], y_list[j + 1]-20))
+                    rects.append((first_line[i], y_list[j], first_line[i + 1], y_list[j + 1] - 20))
         except IndexError:
             pass
         if len(y_list) > 3:
@@ -431,7 +432,7 @@ class CardDetect(CardOcr):
                 elif i == 1:
                     text1 = re.sub("\s+", " ", ''.join(re.findall(r'[A-Za-z0-9]\s*\/*', text1)))
                 else:
-                    text1 = re.sub('\.0',"",text1)
+                    text1 = re.sub('\.0', "", text1)
                     text1 = re.sub("\s+", " ", ''.join(re.findall(r'[A-Za-z0-9]\s*', text1)))
 
                 result[name] = text1
@@ -531,22 +532,27 @@ def main():
     """
     path = 'All_Data/'
     files = sorted(os.listdir(path))
-    ret = []
+    ret_burial = []
+    ret_deed = []
 
     for i in files:
-        card_info = cls_dict(path+i)
-        ret.append(card_info)
-        if card_info['form'] == 'A':
-            card = CardDetect(path+i)
-            card_ret = card.ocr_text()
-            ret.append(card_ret)
+        card = CardDetect(path + i)
+        if card.card_type() == 'Burial':
+            card_info = cls_dict(path + i)
+            ret_burial.append(card_info)
+            text_info = text_dict(path + i)
+            ret_burial.append(text_info)
         else:
-            pass
+            card_info = cls_dict(path + i)
+            ret_deed.append(card_info)
+            text_info = text_dict(path + i)
+            ret_deed.append(text_info)
 
-    df = pd.DataFrame(ret, columns=['file_name', 'handwriting', 'fraction', 'card_type', 'form_type',
-                                    'Name', 'Date of interment', 'Section', 'Lot', 'GR', 'Avg_conf'])
-
-    return df.to_csv('result.csv')
+    df_burial = pd.DataFrame(ret_burial, columns=['file_name', 'handwriting', 'fraction', 'card_type', 'form_type',
+                                                  'Name', 'Date of interment', 'Section', 'Lot', 'GR', 'Avg_conf'])
+    df_deed = pd.DataFrame(ret_burial, columns=['file_name', 'handwriting', 'fraction', 'card_type', 'form_type',
+                                                  'Name', 'Lot-Sec-Gr', 'Deed No. & Date', 'Comments'])
+    return df_burial.to_csv('result_burial.csv'), df_deed.to_csv('result_deed.csv')
 
 
 if __name__ == '__main__':
