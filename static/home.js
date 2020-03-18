@@ -25,6 +25,25 @@ function fileSelected(file){
 	}
 }
 
+function addColumnInTable(trHead, tr1st, data){
+	for(var i of Object.keys(data)){
+		switch(i){
+			case "id": break;
+			case "filename":
+				trHead.append($("<th>").text("File Name"));
+				tr1st.append($("<td>").text(data[i]));
+				break;
+			case "doctype":
+				trHead.append($("<th>").text("Doc Type"));
+				tr1st.append($("<td>").text(data[i]));
+				break;
+			default:
+				trHead.append($("<th>").text(i));
+				tr1st.append($("<td>").text(data[i]));
+		}
+	}
+}
+
 $(document).ready(() => {
 	$("#select_button").click(function(){
 		$("input").click();
@@ -54,10 +73,7 @@ $(document).ready(() => {
 				var tr1st = $("#table_1stline");
 				trHead.empty();
 				tr1st.empty();
-				for(var i of Object.keys(jsonData)){
-					trHead.append($("<th>").text(i));
-					tr1st.append($("<td>").text(jsonData[i]));
-				}
+				addColumnInTable(trHead, tr1st, jsonData)
 			},
 			error: (jqXHR) => {
 				if(jqXHR.status === 500){

@@ -1,15 +1,14 @@
 from app import app, db
 from app.forms import LoginForm, RegistrationForm
-from app.tables import User, Record
+from app.tables import User, Record, Burial, Deed
 
-from flask import abort, flash, Response, redirect, render_template, request, url_for
+from flask import abort, flash, make_response, Response, redirect, render_template, request, url_for
 from flask_login import login_user, logout_user, current_user, login_required
 
+import os
 import json
 import hashlib
 from datetime import datetime
-
-RECORD_COLUMNS = ["id", "filename", "doctype", "name", "date", "val1", "val2", "val3"]
 
 
 @app.route('/login/', methods=['GET', 'POST'])
@@ -59,16 +58,62 @@ def home():
 	return render_template('home.html', navi="home")
 
 
-@app.route('/records/')
+@app.route('/records/<record_type>/')
 @login_required
-def records():
+def record(record_type):
+	if record_type in ['burials', 'deeds']:
+		return render_template('records.html', navi=record_type)
+	else:
+		return abort(404)
+
+@app.route('/getrecords/')
+@login_required
+def getrecords():
+	record_type = request.args.get('RecordType')
+	if record_type == 'burials':
+		record_table = Burial
+	elif record_type == 'deeds':
+		record_table = Deed
+	else:
+		return abort(404)
 	record_list = []
-	for record in Record.query.filter().all():
-		temp = {}
-		for key in RECORD_COLUMNS:
-			temp[key] = str(record.__getattribute__(key))
+	for deed_record in record_table.query.filter().all():
+		temp = {'filename': Record.query.filter(Record.id == deed_record.id).first().filename}
+		temp.update(deed_record.get_dic())
 		record_list.append(temp)
-	return render_template('records.html', navi="records", record_list=record_list)
+	return json.dumps(record_list)
+
+
+@app.route('/editrecord/', methods=['POST'])
+@login_required
+def editrecord():
+	record_dict = request.form
+	record_type = Record.query.filter(Record.id == record_dict['id']).first().doctype
+	if record_type == 'burial':
+		record_edited = Burial.query.filter(Burial.id == record_dict['id']).first()
+	else:
+		record_edited = Deed.query.filter(Deed.id == record_dict['id']).first()
+	record_edited.update(record_dict)
+	db.session.commit()
+	return make_response('')
+
+
+@app.route('/deleterecord/', methods=['POST'])
+@login_required
+def deleterecord():
+	record_dict = request.form
+	outer_record_deleted = Record.query.filter(Record.id == record_dict['id']).first()
+	file_deleted = outer_record_deleted.id
+	record_type = outer_record_deleted.doctype
+	if record_type == 'burial':
+		inner_record_deleted = Burial.query.filter(Burial.id == record_dict['id']).first()
+	else:
+		inner_record_deleted = Deed.query.filter(Deed.id == record_dict['id']).first()
+	db.session.delete(inner_record_deleted)
+	db.session.delete(outer_record_deleted)
+	db.session.commit()
+	os.remove(f'./uploads/{file_deleted}')
+	return make_response('')
 
 
 @app.route('/upload/', methods=['POST'])
@@ -84,36 +129,31 @@ def upload():
 		if record is not None:
 			return {"Error": "This file already exists on server"}
 
-		filename = image_file.filename
-		doctype = "deed"
-		name = "person_name"
-		date = datetime.date(datetime(2000, 1, 1))
-		val1 = "value1"
-		val2 = "value2"
-		val3 = "value3"
+		#Classification and OCR should return a dic
+		record_dic = {}
+		record_dic['id'] = file_hash
+		record_dic['filename'] = image_file.filename
+		record_dic['doctype'] = "burial"
+		record_dic['name'] = "person_name"
+		record_dic['date'] = "1900.1.1"
+		record_dic['section'] = "value_section"
+		record_dic['lot'] = "value_lot"
+		record_dic['gr'] = "value_gr"
 
-		record = Record()
-		record.id = file_hash
-		record.filename = filename
-		record.doctype = doctype
-		record.name = name
-		record.date = date
-		record.val1 = val1
-		record.val2 = val2
-		record.val3 = val3
+		record = Record(record_dic)
+		if record.doctype == 'burial':
+			sub_record = Burial(record_dic)
+		else:
+			sub_record = Deed(record_dic)
+
 		db.session.add(record)
+		db.session.add(sub_record)
 		db.session.commit()
 		with open('./uploads/'+file_hash, 'wb') as saved_file:
 			saved_file.write(file_content)
 
-		return {
-			"filename": filename,
-			"doctype": doctype,
-			"name": name,
-			"date": str(date),
-			"val1": val1,
-			"val2": val2,
-			"val3": val3
-		}
+		return record_dic
+
+	result_dic = scan_image(f)
 	#return abort(500)
-	return json.dumps(scan_image(f))
+	return json.dumps(result_dic)

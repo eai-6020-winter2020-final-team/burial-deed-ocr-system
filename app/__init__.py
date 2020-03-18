@@ -7,7 +7,12 @@ from app import config
 
 # from MODULE import main_function
 
-app = Flask("CemeteryTest")
+app = Flask(
+	"CemeteryTest",
+	template_folder='./templates/',
+	static_folder='./',
+	static_url_path='',
+)
 app.config.from_object(config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

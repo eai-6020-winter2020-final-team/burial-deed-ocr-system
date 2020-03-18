@@ -2,22 +2,16 @@
 
 {% block head_content %}
 <script src="/static/jquery-3.4.1.min.js"></script>
+<script>const recordType = '{{ navi }}'</script>
+<script src="/static/records.js"></script>
 <link rel="stylesheet" type="text/css" href="/static/main.css">
 {% endblock %}
 
 {% block body_content %}
-<table border="1">
-	<tr>
-		{% for key in record_list[0] %}
-		<th>{{ key }}</th>
-		{% endfor %}
-	</tr>
-	{% for record in record_list %}
-	<tr>
-		{% for value in record %}
-		<td>{{ record[value] }}</td>
-		{% endfor %}
-	</tr>
-	{% endfor %}
+<p></p>
+<table id="query_table">
+	<tr id="table_headline"></tr>
 </table>
+<div id="image_display"></div>
+
 {% endblock %}

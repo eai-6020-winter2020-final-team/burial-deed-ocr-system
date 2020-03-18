@@ -2,3 +2,4 @@
 ResImages/
 uploads/
 .idea/
+*.pyc

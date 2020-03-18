@@ -10,7 +10,7 @@
 </head>
 <body>
 <ul id="navigator">
-	<li><span id="navigator_span">A (not) Very Simple WebUI For Burial Deed OCR</span></li>
+	<li><span id="navigator_span">Burial and Deed Recognition System</span></li>
 
 	{% if current_user.is_anonymous %}
 	<li class="navigate_item selected_navi_item"><a href="{{ url_for('login') }}">Login</a></li>
@@ -24,16 +24,22 @@
 	<li class="navigate_item"><a href="/">Log</a></li>
 	{% endif %}
 
-	{% if navi == "records" %}
-	<li class="navigate_item selected_navi_item"><a href="/records/">Records</a></li>
+	{% if navi == "deeds" %}
+	<li class="navigate_item selected_navi_item"><a href="/records/deeds/">Deed Records</a></li>
 	{% else %}
-	<li class="navigate_item"><a href="/records/">Records</a></li>
+	<li class="navigate_item"><a href="/records/deeds/">Deed Records</a></li>
+	{% endif %}
+
+	{% if navi == "burials" %}
+	<li class="navigate_item selected_navi_item"><a href="/records/burials/">Burial Records</a></li>
+	{% else %}
+	<li class="navigate_item"><a href="/records/burials/">Burial Records</a></li>
 	{% endif %}
 
 	{% if navi == "home" %}
-	<li class="navigate_item selected_navi_item"><a href="/">Upload</a></li>
+	<li class="navigate_item selected_navi_item"><a href="/">Upload Image</a></li>
 	{% else %}
-	<li class="navigate_item"><a href="/">Upload</a></li>
+	<li class="navigate_item"><a href="/">Upload Image</a></li>
 	{% endif %}
 </ul>
 {% with messages = get_flashed_messages() %}

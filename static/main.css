@@ -1,8 +1,23 @@
+a {
+	cursor: pointer;
+}
 
+ul {
+	padding: 0;
+}
 
 img {
 	max-height: 400px;
 	max-width: 600px;
+}
+
+input{
+    outline-style: none ;
+    border: 1px solid gray;
+    border-radius: 4px;
+    padding: 2px 0;
+    width: 100px;
+    font-size: 14px;
 }
 
 table {
@@ -17,7 +32,12 @@ th {
 	color:#ffffff;
 	font-size: 1.1em;
 	padding: 6px;
-	text-align:center;
+	text-align: center;
+	text-transform: capitalize;
+}
+
+tr {
+	background-color: #f7fdff;
 }
 
 td {
@@ -70,8 +90,8 @@ body {
 }
 
 #file_uploader {
-	height: 0px;
-	width: 0px;
+	height: 0;
+	width: 0;
 	display: none;
 }
 
@@ -116,6 +136,68 @@ body {
 	margin: 20px;
 }
 
+#image_display {
+	position: fixed;
+	display: none;
+	margin: 0 auto;
+	left: 0;
+	right: 0;
+}
+
 #result_table {
 	display: none;
+}
+
+#query_table {
+	display: inline-block;
+	margin: auto;
+	overflow: auto;
+}
+
+.table_btn {
+	cursor: pointer;
+	border: 1px solid grey;
+	border-radius: 4px;
+	color: white;
+	padding: 3px 0;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 12px;
+	margin: 0 2px;
+	width: 50px;
+}
+
+.edit_btn {
+	background-color: #83a7e1;
+}
+
+.delete_btn {
+	background-color: #e64b37;
+}
+
+.conf_btn {
+	background-color: #e6e43b;
+	display: none;
+}
+
+.disc_btn {
+	background-color: #6ce62e;
+	display: none;
+}
+
+
+.animated {
+	animation-name: anim;
+	animation-duration: 0.75s;
+}
+
+@keyframes anim {
+    0%   {background: #98ff57;}
+    100% {background: #f7fdff;}
+}
+
+@-webkit-keyframes anim {
+    0%   {background: #98ff57;}
+    100% {background: #f7fdff;}
 }

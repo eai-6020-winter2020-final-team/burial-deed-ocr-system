@@ -31,12 +31,66 @@ def load_user(user_id):
 class Record(db.Model):
 	id = db.Column(db.String(32), primary_key=True)
 	filename = db.Column(db.String(128))
-	doctype = db.Column(db.Enum('deed', 'burial'))
-	name = db.Column(db.String(128))
-	date = db.Column(db.Date)
-	val1 = db.Column(db.String(128))
-	val2 = db.Column(db.String(128))
-	val3 = db.Column(db.String(128))
+	doctype = db.Column(db.Enum('burial', 'deed'))
 
 	def __repr__(self):
 		return '<Record {}>'.format(self.id)
+
+	def __init__(self, dic):
+		self.id = dic['id']
+		self.filename = dic['filename']
+		self.doctype = dic['doctype']
+
+
+class Burial(db.Model):
+	id = db.Column(db.String(32), db.ForeignKey('record.id'), primary_key=True)
+	name = db.Column(db.String(128))
+	# date = db.Column(db.Date)
+	date = db.Column(db.String(32))
+	section = db.Column(db.String(128))
+	lot = db.Column(db.String(128))
+	gr = db.Column(db.String(128))
+
+	def __repr__(self):
+		return '<Burial {}>'.format(self.id)
+
+	def __init__(self, dic):
+		self.id = dic['id']
+		self.update(dic)
+
+	def update(self, dic):
+		self.name = dic['name']
+		self.date = dic['date']
+		self.section = dic['section']
+		self.lot = dic['lot']
+		self.gr = dic['gr']
+
+	def get_dic(self) -> dict:
+		return {'id': self.id, 'name': self.name, 'date': self.date, 'section': self.section, 'lot': self.lot, 'gr': self.gr}
+
+
+class Deed(db.Model):
+	id = db.Column(db.String(32), db.ForeignKey('record.id'), primary_key=True)
+	name = db.Column(db.String(128))
+	# date = db.Column(db.Date)
+	date = db.Column(db.String(32))
+	section = db.Column(db.String(128))
+	lot = db.Column(db.String(128))
+	deedno = db.Column(db.String(128))
+
+	def __repr__(self):
+		return '<Deed {}>'.format(self.id)
+
+	def __init__(self, dic):
+		self.id = dic['id']
+		self.update(dic)
+
+	def update(self, dic):
+		self.name = dic['name']
+		self.date = dic['date']
+		self.section = dic['section']
+		self.lot = dic['lot']
+		self.deedno = dic['deedno']
+
+	def get_dic(self) -> dict:
+		return {'id': self.id, 'name': self.name, 'date': self.date, 'section': self.section, 'lot': self.lot, 'deedno': self.deedno}

@@ -15,7 +15,7 @@ def main_function(file) -> dict:
 	result_dict = recognizer_func(image_arr)
 	return result_dict
 
-#TODO:
+
 def preprocess(img) -> np.ndarray:
 	"""
 	Preprocess Image
@@ -26,7 +26,7 @@ def preprocess(img) -> np.ndarray:
 	"""
 	pass
 
-#TODO:
+
 def classify_function(img):
 	"""
 	Classify Images into 3 groups
@@ -37,14 +37,14 @@ def classify_function(img):
 	"""
 	pass
 
-#TODO:
+
 def recognition_a(img):
 	pass
 
-#TODO:
+
 def recognition_b(img):
 	pass
 
-#TODO:
+
 def recognition_c(img):
 	pass
