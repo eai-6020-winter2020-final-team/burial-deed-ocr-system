@@ -29,5 +29,10 @@ To recognize card, use `text_dict()`, it will return a dictionary of ocr result
    text_dict(image)
 ```
 
+To obtain all result, use `image_ocr()`.
+```python
+   image_ocr(image)
+```
+
 ## Summary
 All of model in this packages are based on `EAI6020_Final_Project_Classifier.ipynb` and `EAI6020_Final_Project_Deed_Classifier.ipynb`. You **should** run both notebook first.
