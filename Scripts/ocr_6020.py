@@ -178,7 +178,10 @@ class CardOcr(object):
             if horizontal_lines[0][1] > 50:
                 first_line = horizontal_lines[0]
             else:
-                first_line = horizontal_lines[1]
+                try:
+                    first_line = horizontal_lines[1]
+                except IndexError:
+                    first_line = [0, 104, w, 104]
         else:
             first_line = [0, 104, w, 104]
 
@@ -225,8 +228,8 @@ class CardDetect(CardOcr):
         i = 0
         while i < 7:
             temp = first_line
-            first_line[1] += 60
-            first_line[3] += 60
+            first_line[1] += 55
+            first_line[3] += 55
             line = temp.copy()
             lines.append(line)
             i += 1
@@ -392,7 +395,7 @@ class CardDetect(CardOcr):
         except IndexError:
             pass
 
-        rect_ret = rects[:7]
+        rect_ret = rects[:8]
         # plot rect:
         for rect in rect_ret:
             self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (255, 255, 255), 2)
@@ -406,7 +409,7 @@ class CardDetect(CardOcr):
         thresh = self.preproc_img()
         target = [0, 2, 3, 4, 5]
         file_name = ['Name', 'Date of interment', 'Section', 'Lot', 'GR']
-        special_char = '‘’,|-_<"=;«“&—]uv'
+        special_char = '‘’,|-_<"=;«“&—]uv(é*O§¢!'
         file_type = [0, 0, 1, 1, 2]
         threshold = [-1, -1, -1, -1, -1]
         # rect1 = rects[target[0]]
@@ -445,22 +448,33 @@ class CardDetect(CardOcr):
 
     def ocr_text_form_bc(self):
         rectangle = self.cell_detect_other()
-        rects = rectangle[:4]
+        rects = rectangle[:5]
         image = self.preproc_img()
         # print(rects)
         file_name = ['Name', 'Lot-Sec-Gr-Ter', 'Date of Burial']
-        special_char = '‘’,|-_<"=;«“&—]uv'
+        special_char = '‘’,|-_<"=;«“&—]uv(é*O§¢!'
         result = {}
         temp = []
         for i in range(4):
-            rect1 = rects[i]
-            # print(rect1)
-            detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
-            text = pytesseract.image_to_string(detect_img, config='-l eng --psm 10')
-            text = ''.join([char for char in text if char not in special_char])
-            temp.append(text)
+            try:
+                if i == 0:
+                    rect1 = rects[i]
+                    # print(rect1)
+                    detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
+                    text = pytesseract.image_to_string(detect_img, config='-l eng --psm 7')
+                    text = ''.join([char for char in text if char not in special_char])
+                    temp.append(text)
+                else:
+                    rect1 = rects[i]
+                    # print(rect1)
+                    detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
+                    text = pytesseract.image_to_string(detect_img, config='-l eng snum --psm 7')
+                    text = ''.join([char for char in text if char not in special_char])
+                    temp.append(text)
+            except IndexError:
+                pass
 
-        result[file_name[0]] = temp[0]
+        result[file_name[0]] = temp[0:1]
         result[file_name[1]] = temp[1:3]
         result[file_name[2]] = temp[3:]
 
@@ -471,18 +485,29 @@ class CardDetect(CardOcr):
         image = self.preproc_img()
         # print(rects)
         file_name = ['Name', 'Lot-Sec-Gr', 'Deed No. & Date', 'Comments']
-        special_char = '‘’,|-_<"=;«“&—]uv'
+        special_char = '‘’,|-_<"=;«“&—]uv(é*O§¢!'
         result = {}
         temp = []
-        for i in range(7):
-            rect1 = rects[i]
-            # print(rect1)
-            detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
-            text = pytesseract.image_to_string(detect_img, config='-l eng --psm 10')
-            text = ''.join([char for char in text if char not in special_char])
-            temp.append(text)
+        for i in range(8):
+            if i in range(1, 5):
+                rect1 = rects[i]
+                # print(rect1)
+                detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
+                text = pytesseract.image_to_string(detect_img, config='-l eng snum --psm 7')
+                text = ''.join([char for char in text if char not in special_char])
+                text = re.sub("\s+", " ", ''.join(re.findall(r'[A-Za-z0-9]\s*\/*', text)))
+                temp.append(text)
+            else:
+                rect1 = rects[i]
+                # print(rect1)
+                detect_img = image[rect1[1]:rect1[3], rect1[0]:rect1[2]]
+                text = pytesseract.image_to_string(detect_img, config='-l eng --psm 7')
+                text = ''.join([char for char in text if char not in special_char])
+                text = re.sub("\s+", " ", ''.join(re.findall(r'[A-Za-z0-9]\s*',
+                                                             re.sub("[,|()|-]", " ", text)))).upper()
+                temp.append(text)
 
-        result[file_name[0]] = temp[0]
+        result[file_name[0]] = temp[0:1]
         result[file_name[1]] = temp[1:3]
         result[file_name[2]] = temp[3:5]
         result[file_name[3]] = temp[5:]
@@ -511,19 +536,47 @@ def cls_dict(image):
 
 
 def text_dict(image):
-    image_ret = {}
     card = CardDetect(image)
     card_type = card.card_type()
     form = card.form_type()
     if card_type == 'Burial' and form == 'A':
-        image_ret = card.ocr_text_form_a()
+        image_text = card.ocr_text_form_a()
     elif card_type == 'Burial' and form != 'A':
-        image_ret = card.ocr_text_form_bc()
+        image_text = card.ocr_text_form_bc()
     else:
-        image_ret = card.ocr_text_deed()
+        image_text = card.ocr_text_deed()
+
+    return image_text
+
+
+def image_ocr(image):
+    image_ret = {}
+    card = CardDetect(image)
+    image_ret['file_name'] = image
+
+    hw = card.flag_hw()
+    image_ret['handwriting'] = hw
+
+    fraction = card.flag_f()
+    image_ret['fraction'] = fraction
+
+    card_type = card.card_type()
+    image_ret['card_type'] = card_type
+
+    form = card.form_type()
+    image_ret['form'] = form
+
+    if card_type == 'Burial' and form == 'A':
+        temp = card.ocr_text_form_a()
+        image_ret.update(temp)
+    elif card_type == 'Burial' and form != 'A':
+        temp = card.ocr_text_form_bc()
+        image_ret.update(temp)
+    else:
+        temp = card.ocr_text_deed()
+        image_ret.update(temp)
 
     return image_ret
-
 
 def main():
     """
@@ -551,7 +604,7 @@ def main():
     df_burial = pd.DataFrame(ret_burial, columns=['file_name', 'handwriting', 'fraction', 'card_type', 'form_type',
                                                   'Name', 'Date of interment', 'Section', 'Lot', 'GR', 'Avg_conf'])
     df_deed = pd.DataFrame(ret_burial, columns=['file_name', 'handwriting', 'fraction', 'card_type', 'form_type',
-                                                  'Name', 'Lot-Sec-Gr', 'Deed No. & Date', 'Comments'])
+                                                'Name', 'Lot-Sec-Gr', 'Deed No. & Date', 'Comments'])
     return df_burial.to_csv('result_burial.csv'), df_deed.to_csv('result_deed.csv')
 
 
