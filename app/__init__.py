@@ -5,6 +5,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 from app import config
 
+import logging
+
 # from MODULE import main_function
 
 app = Flask(
@@ -14,6 +16,13 @@ app = Flask(
 	static_url_path='',
 )
 app.config.from_object(config)
+
+handler = logging.FileHandler('changes.log')
+handler.setLevel(logging.INFO)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+app.logger.addHandler(handler)
+
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 loginManager = LoginManager(app)

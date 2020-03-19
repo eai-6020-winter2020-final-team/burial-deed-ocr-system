@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>未知 </title></head><body>
+<h1 id="ocr">OCR</h1>
+<h2 id="introduction">Introduction</h2>
+<h3 id="files">files</h3>
+<p><code>Burial_recognizer_form_bc.ipynb</code> shows pipeline of recognize burial B form step by step; <br />
+<code>Deed_recognizer_form_b.ipynb</code> shows pipeline of recognize Deed B form step by step;      <br />
+<code>Deed_recognizer_form_c.ipynb</code> shows pipeline of recognize Deed C form step by step;    </p>
+<h3 id="import">import</h3>
+<p><code>python
+    #coding=utf-8
+    from ocr_6020 import cls_dict, text_dict</code></p>
+<h3 id="api">API</h3>
+<p>If you want to use api to find image information, use <code>cls_dict()</code>, it will return a dictionary of image information.</p>
+<p><code>python
+   cls_dict(image)</code></p>
+<p>To recognize card, use <code>text_dict()</code>, it will return a dictionary of ocr result</p>
+<p><code>python
+   text_dict(image)</code></p>
+<h2 id="summary">Summary</h2>
+<p>All of model in this packages are based on <code>EAI6020_Final_Project_Classifier.ipynb</code> and <code>EAI6020_Final_Project_Deed_Classifier.ipynb</code>. You <strong>should</strong> run both notebook first.</p>
+</body></html>

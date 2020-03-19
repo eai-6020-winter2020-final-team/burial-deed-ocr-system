@@ -1,14 +1,13 @@
 let fields = [];
 
 function displayImage(a){
-	let imgDiv = $('#image_display');
-	imgDiv.empty();
+	let imageDisplay = $('#image_display');
+	imageDisplay.attr('src', '');
 	let id = $(a).parent().parent().attr('id');
-	let img = $('<img>').attr('src', '/uploads/' + id);
-	imgDiv.append(img);
-	imgDiv.fadeIn(150);
-	imgDiv.click(() => {
-		imgDiv.fadeOut(150);
+	imageDisplay.attr('src', '/uploads/' + id);
+	imageDisplay.fadeIn(150);
+	imageDisplay.click(() => {
+		imageDisplay.fadeOut(150);
 	});
 }
 

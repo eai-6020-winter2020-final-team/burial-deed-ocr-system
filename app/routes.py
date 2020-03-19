@@ -66,6 +66,7 @@ def record(record_type):
 	else:
 		return abort(404)
 
+
 @app.route('/getrecords/')
 @login_required
 def getrecords():
@@ -95,6 +96,8 @@ def editrecord():
 		record_edited = Deed.query.filter(Deed.id == record_dict['id']).first()
 	record_edited.update(record_dict)
 	db.session.commit()
+
+	app.logger.info(f'User [{current_user.username} : {current_user.id}] edited record [{record_dict["id"]}]')
 	return make_response('')
 
 
@@ -109,10 +112,13 @@ def deleterecord():
 		inner_record_deleted = Burial.query.filter(Burial.id == record_dict['id']).first()
 	else:
 		inner_record_deleted = Deed.query.filter(Deed.id == record_dict['id']).first()
+
 	db.session.delete(inner_record_deleted)
 	db.session.delete(outer_record_deleted)
 	db.session.commit()
 	os.remove(f'./uploads/{file_deleted}')
+
+	app.logger.info(f'User [{current_user.username} : {current_user.id}] deleted record [{file_deleted}]')
 	return make_response('')
 
 
@@ -129,7 +135,7 @@ def upload():
 		if record is not None:
 			return {"Error": "This file already exists on server"}
 
-		#Classification and OCR should return a dic
+		# Classification and OCR should return a dic
 		record_dic = {}
 		record_dic['id'] = file_hash
 		record_dic['filename'] = image_file.filename
@@ -149,11 +155,20 @@ def upload():
 		db.session.add(record)
 		db.session.add(sub_record)
 		db.session.commit()
-		with open('./uploads/'+file_hash, 'wb') as saved_file:
+		with open('./uploads/' + file_hash, 'wb') as saved_file:
 			saved_file.write(file_content)
 
+		app.logger.info(f'User [{current_user.username} : {current_user.id}] added record [{file_hash}]')
 		return record_dic
 
 	result_dic = scan_image(f)
-	#return abort(500)
+	# return abort(500)
 	return json.dumps(result_dic)
+
+
+@app.route('/log/')
+@login_required
+def log():
+	with open('changes.log') as log_file:
+		log_text = log_file.read()
+	return render_template('log.html', navi='log', log_text=log_text)
