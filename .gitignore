@@ -3,3 +3,4 @@ ResImages/
 uploads/
 .idea/
 *.pyc
+*.log
