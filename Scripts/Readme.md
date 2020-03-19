@@ -33,6 +33,7 @@ To obtain all result, use `image_ocr()`.
 ```python
    image_ocr(image)
 ```
+It will return a dictionary, like {'file_name': 'All_Data/MTH_LotCard_Tan_015148_01.PNG', 'handwriting': 'N', 'fraction': 'Y', 'card_type': 'Deed', 'form': 'A', 'Name': ['DADDIO SYLIA'], 'Lot-Sec-Gr': ['Lot No. SE 549 Section 27', 'Gr1 NE 548'], 'Deed No. & Date': ['1/4 3 e 614 /974 ', 'Lalkd F Contract 8896 431965'], 'Comments': ['TRANSFERRED TO]}
 
 ## Summary
 All of model in this packages are based on `EAI6020_Final_Project_Classifier.ipynb` and `EAI6020_Final_Project_Deed_Classifier.ipynb`. You **should** run both notebook first.
