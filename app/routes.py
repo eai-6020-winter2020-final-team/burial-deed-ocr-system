@@ -8,7 +8,10 @@ from flask_login import login_user, logout_user, current_user, login_required
 import os
 import json
 import hashlib
-from datetime import datetime
+from io import BytesIO
+from matplotlib import pyplot as plt
+
+from Scripts.ocr_6020 import image_ocr
 
 
 @app.route('/login/', methods=['GET', 'POST'])
@@ -136,6 +139,7 @@ def upload():
 			return {"Error": "This file already exists on server"}
 
 		# Classification and OCR should return a dic
+		"""
 		record_dic = {}
 		record_dic['id'] = file_hash
 		record_dic['filename'] = image_file.filename
@@ -145,6 +149,20 @@ def upload():
 		record_dic['section'] = "value_section"
 		record_dic['lot'] = "value_lot"
 		record_dic['gr'] = "value_gr"
+		"""
+		img_stream = BytesIO(file_content)
+		img_type = image_file.filename.split('.')[-1]
+		img = plt.imread(img_stream, format=img_type)
+		record_dic = image_ocr(img)
+		print(record_dic)
+		record_dic['id'] = file_hash
+		record_dic['filename'] = image_file.filename
+		record_dic['doctype'] = record_dic.pop('card_type')
+		record_dic['name'] = str(record_dic.pop('Name'))
+		record_dic['date'] = str(record_dic.pop('Deed No. & Date'))
+		record_dic['section'] = str(record_dic.pop('Lot-Sec-Gr'))
+		record_dic['lot'] = record_dic['section']
+		record_dic['gr'] = record_dic['section']
 
 		record = Record(record_dic)
 		if record.doctype == 'burial':

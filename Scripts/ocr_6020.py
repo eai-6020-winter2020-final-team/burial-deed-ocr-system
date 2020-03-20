@@ -9,6 +9,7 @@ from PIL import Image
 import tensorflow as tf
 
 
+
 def image_to_conf(image, text_type, n=0):
     """
     Using tesseract to get text and confidence
@@ -42,9 +43,17 @@ class CardOcr(object):
     OCR for card recognition pipeline: card type classification, form classification, crop and read.
     """
 
-    def __init__(self, img_path):
-        self.image = cv2.imread(img_path, 1)
-        self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+    #def __init__(self, img_path):
+    #    self.image = cv2.imread(img_path, 1)
+    #    self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+    """Adaptions made by Eric"""
+    def __init__(self, img):
+        if len(img.shape) > 2:
+            self.image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            self.gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        else:
+            self.image = img
+            self.gray = img
 
     def show_image(self, code=cv2.COLOR_BGR2RGB):
         """
@@ -108,7 +117,9 @@ class CardOcr(object):
         Form classification for burial cards
         :return: string
         """
-        model_form = tf.keras.models.load_model('model_form.h5')
+        """Eric adaption"""
+        model_form = tf.keras.models.load_model(r'.\Scripts\model_form.h5')
+        # model_form = load_model(r'.\Scripts\model_form.h5')
         ret = model_form.predict(self.format_input())
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
@@ -125,7 +136,9 @@ class CardOcr(object):
         flag handwriting
         :return: string
         """
-        model_hw = tf.keras.models.load_model('model_hw.h5')
+        """Eric adaption"""
+        model_hw = tf.keras.models.load_model(r'.\Scripts\model_hw.h5')
+        # model_hw = load_model(r'.\Scripts\model_hw.h5')
         ret = model_hw.predict(self.format_input())
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
@@ -138,7 +151,9 @@ class CardOcr(object):
         flag fraction
         :return: string
         """
-        model_f = tf.keras.models.load_model('model_f.h5')
+        """Eric adaption"""
+        model_f = tf.keras.models.load_model(r'.\Scripts\model_f.h5')
+        # model_f = load_model(r'.\Scripts\model_f.h5')
         ret = model_f.predict(self.format_input())
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
@@ -193,9 +208,13 @@ class CardDetect(CardOcr):
     OCR for card recognition
     """
 
-    def __init__(self, img_path):
-        super().__init__(img_path)
-        self.image = cv2.imread(img_path, 1)
+    #def __init__(self, img_path):
+    #    super().__init__(img_path)
+    #    self.image = cv2.imread(img_path, 1)
+    """Adaption made by Eric"""
+    def __init__(self, img):
+        super().__init__(img)
+        self.image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
     # draw Auxiliary line
     def draw_auxiliary(self):
@@ -552,7 +571,6 @@ def text_dict(image):
 def image_ocr(image):
     image_ret = {}
     card = CardDetect(image)
-    image_ret['file_name'] = image
 
     hw = card.flag_hw()
     image_ret['handwriting'] = hw
@@ -560,7 +578,9 @@ def image_ocr(image):
     fraction = card.flag_f()
     image_ret['fraction'] = fraction
 
-    card_type = card.card_type()
+    # card_type = card.card_type()
+    """Eric adaption"""
+    card_type = card.card_type().lower()
     image_ret['card_type'] = card_type
 
     form = card.form_type()
