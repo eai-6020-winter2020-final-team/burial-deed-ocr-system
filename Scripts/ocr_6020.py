@@ -146,7 +146,7 @@ class CardOcr(object):
         find card type
         :return: string
         """
-        image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        image = self.gray
         im = image[180:280, 0:200]
         text = pytesseract.image_to_string(im)
         if 'No' in text:
@@ -450,11 +450,6 @@ class CardDetect(CardOcr):
         """
         x_list, y_list = self.get_coordinate_form_a()
         # print(x_list)
-        # crop the image by second line
-        try:
-            self.image = self.image[0:y_list[2], 0:950].copy()
-        except IndexError:
-            pass
         rects = []
 
         try:
