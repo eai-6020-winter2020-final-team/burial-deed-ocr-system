@@ -7,6 +7,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from PIL import Image
 import tensorflow as tf
+from tensorflow.keras import backend as K
 
 
 
@@ -38,6 +39,79 @@ def image_to_conf(image, text_type, n=0):
     return ' '.join(text_list), conf
 
 
+def find_form(image):
+    """
+    Find Form of image
+    update: 2020.3.20
+    """
+    # Binarization
+    binary = cv2.adaptiveThreshold(~image, 255,
+                                   cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, -10)
+    rows, cols = binary.shape
+    scale = 20
+    # horizontal lines
+    kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (cols // scale, 1))
+    eroded = cv2.erode(binary, kernel, iterations=2)
+    dilatedcol = cv2.dilate(eroded, kernel, iterations=2)
+
+    # vertical lines
+    kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (1, rows // scale))
+    eroded = cv2.erode(binary, kernel, iterations=2)
+    dilatedrow = cv2.dilate(eroded, kernel, iterations=2)
+
+    # get vertex
+    vertex = cv2.bitwise_and(dilatedcol, dilatedrow)
+
+    # get cell
+    merge = cv2.add(dilatedcol, dilatedrow)
+    return vertex, merge
+
+
+def img_to_arr(img, x, y):
+    """ 
+    Convert image into array
+    update: 2020.3.20
+    """
+    img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).convert('L')
+    if img.size[0] != x or img.size[1] != y:
+        img = img.resize((x, y))
+
+    arr = []
+
+    for i in range(y):
+        for j in range(x):
+            pixel = 1.0 - float(img.getpixel((j, i))) / 255.0
+            arr.append(pixel)
+
+    return arr
+
+
+def keras_input_data(data, img_width, img_height):
+    """ 
+    Convert input image into keras input data
+    update: 2020.3.20
+    """
+    # Load dataset
+    input_data = np.array(data)
+
+    # Reshape data based on channels first / channels last strategy.
+    # This is dependent on whether you use TF, Theano or CNTK as backend.
+    # Source: https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py
+    if K.image_data_format() == 'channels_first':
+        input_data = input_data.reshape(input_data.shape[0], 1, img_width, img_height)
+    else:
+        input_data = input_data.reshape(input_data.shape[0], img_width, img_height, 1)
+
+    # Parse numbers as floats
+    input_data = input_data.astype('float32')
+
+    # Normalize data
+    input_data = input_data / 255
+
+    return input_data
+
+
+
 class CardOcr(object):
     """
     OCR for card recognition pipeline: card type classification, form classification, crop and read.
@@ -50,7 +124,9 @@ class CardOcr(object):
     def __init__(self, img):
         if len(img.shape) > 2:
             self.image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-            self.gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            # denoising:
+            denoise = cv2.fastNlMeansDenoisingColored(self.image, None, 3, 3, 7, 21)
+            self.gray = cv2.cvtColor(denoise, cv2.COLOR_RGB2GRAY)
         else:
             self.image = img
             self.gray = img
@@ -82,35 +158,41 @@ class CardOcr(object):
                 return 'Deed'
             else:
                 return 'Burial'
-
-    def img_to_arr(self, x, y):
-        """
-        Convert image to array
-        :param x: shape[0]
-        :param y: shape[1]
-        :return:
-        """
-        img = Image.fromarray(cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)).convert('L')
-        if img.size[0] != x or img.size[1] != y:
-            img = img.resize((x, y))
-
-        arr = []
-
-        for i in range(y):
-            for j in range(x):
-                pixel = 1.0 - float(img.getpixel((j, i))) / 255.0
-                arr.append(pixel)
-        return arr
+            
+# modify: 2020.3.20
+#     def img_to_arr(self, x, y):
+#         """
+#         Convert image to array
+#         :param x: shape[0]
+#         :param y: shape[1]
+#         :return:
+#         """
+#         img = Image.fromarray(cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)).convert('L')
+#         if img.size[0] != x or img.size[1] != y:
+#             img = img.resize((x, y))
+# 
+#         arr = []
+# 
+#         for i in range(y):
+#             for j in range(x):
+#                 pixel = 1.0 - float(img.getpixel((j, i))) / 255.0
+#                 arr.append(pixel)
+#         return arr
+ 
 
     def format_input(self):
         """
         convert image into input data
         :return: np.array
         """
-        input_img = np.array(self.img_to_arr(300, 300))
-        input_img = input_img.reshape(1, 300, 300, 1)
+        input_img_text = np.array(img_to_arr(self.image, 300, 300))
+        vertex, img = find_form(self.gray)
+        input_img_form = np.array(img_to_arr(img, 300, 300))
 
-        return input_img
+        input_img_text = input_img_text.reshape(1, 300, 300, 1)
+        input_img_form = input_img_form.reshape(1, 300, 300, 1)
+
+        return input_img_text, input_img_form
 
     def form_type(self):
         """
@@ -120,7 +202,10 @@ class CardOcr(object):
         """Eric adaption"""
         model_form = tf.keras.models.load_model(r'.\Scripts\model_form.h5')
         # model_form = load_model(r'.\Scripts\model_form.h5')
-        ret = model_form.predict(self.format_input())
+        # update: 2020.3.20
+        text_list, form_list = self.format_input()
+        input_data = keras_input_data(form_list, 300, 300)
+        ret = model_form.predict(input_data)
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
             return 'A'
@@ -139,7 +224,10 @@ class CardOcr(object):
         """Eric adaption"""
         model_hw = tf.keras.models.load_model(r'.\Scripts\model_hw.h5')
         # model_hw = load_model(r'.\Scripts\model_hw.h5')
-        ret = model_hw.predict(self.format_input())
+        # update: 2020.3.20
+        text_list, form_list = self.format_input()
+        input_data = keras_input_data(text_list, 300, 300)
+        ret = model_hw.predict(input_data)
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
             return 'N'
@@ -154,7 +242,10 @@ class CardOcr(object):
         """Eric adaption"""
         model_f = tf.keras.models.load_model(r'.\Scripts\model_f.h5')
         # model_f = load_model(r'.\Scripts\model_f.h5')
-        ret = model_f.predict(self.format_input())
+        # update: 2020.3.20
+        text_list, form_list = self.format_input()
+        input_data = keras_input_data(text_list, 300, 300)
+        ret = model_f.predict(input_data)
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
             return 'N'
@@ -163,32 +254,43 @@ class CardOcr(object):
 
     def preproc_img(self):
         """
+        update: 2020.3.20
         pre-process image:
         :return:
         """
         ret, th1 = cv2.threshold(self.gray, 200, 255, cv2.THRESH_BINARY)
-        th3 = cv2.adaptiveThreshold(th1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        th2 = cv2.adaptiveThreshold(th1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                     cv2.THRESH_BINARY, 11, 2)
-        blur = cv2.medianBlur(th3, 3)  # ksize: 3*3
-        self.image = cv2.medianBlur(blur, 3)
+
+        # draw two vertical lines:
+        h, w = th2.shape
+        lines = [[23, 0, 23, h], [w - 50, 0, w - 50, h]]
+
+        for l in lines:
+            self.image = cv2.line(th2, (l[0], l[1]), (l[2], l[3]), (0, 0, 0), 2)
 
         return self.image
 
     def first_line(self):
         """
+        update: 2020.3.20
         detect first line of image
         :return:
         """
-        blur = self.preproc_img()
+        image = self.preproc_img()
 
-        h, w = blur.shape
+        h, w = image.shape
+        vertex, merge = find_form(image)
+        ys, xs = np.where(vertex > 0)
+        y_list = []
+        for i in range(len(ys) - 1):
+            if ys[i + 1] - ys[i] > 20:
+                y_list.append(ys[i])
+        # y_list.append(ys[i])
         # horizontal line
         horizontal_lines = []
-        for i in range(h - 1):
-            # find the split line
-            if abs(np.mean(blur[i, :]) - np.mean(blur[i + 1, :])) > 100:
-                # plot the line
-                horizontal_lines.append([0, i, w, i])
+        for y in y_list:
+            horizontal_lines.append([0, y, w, y])
         if horizontal_lines and horizontal_lines[0][1] < 150:
             if horizontal_lines[0][1] > 50:
                 first_line = horizontal_lines[0]
@@ -216,22 +318,19 @@ class CardDetect(CardOcr):
         super().__init__(img)
         self.image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-    # draw Auxiliary line
     def draw_auxiliary(self):
         """
+        update: 2020.3.20
         draw auxiliary to crop the cell
         :return: image
         """
         # plot lines
-        proc_image = self.preproc_img()
-        h, w = proc_image.shape
+        # proc_image = self.preproc_img()
         first_line = self.first_line()
-        lines = [[23, 30, 23, h], [w - 50, 30, w - 50, h]]
         first_line[1] -= 55
         first_line[3] -= 55
-        lines.append(first_line)
-        for l in lines:
-            self.image = cv2.line(self.image, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 2)
+        self.image = cv2.line(self.image, (first_line[0], first_line[1]), (first_line[2], first_line[3]), (0, 0, 255),
+                              2)
 
         return self.image
 
@@ -241,27 +340,34 @@ class CardDetect(CardOcr):
         :return: image
         """
         first_line = self.first_line()
-        image = self.draw_auxiliary()
-        lines = [first_line]
+        # image = self.preproc_img()
+        # image = self.draw_auxiliary()
+        if first_line[1] > 100:
+            first_line[1] -= 20
+            first_line[3] -= 20
+        self.image = cv2.line(self.image, (first_line[0], first_line[1]), (first_line[2], first_line[3]), (0, 0, 255),
+                              2)
+        new_line = [first_line[0], first_line[1]-60, first_line[2], first_line[3]-60]
+        lines = [new_line, first_line]
 
         i = 0
         while i < 7:
             temp = first_line
-            first_line[1] += 55
-            first_line[3] += 55
+            first_line[1] += 58
+            first_line[3] += 58
             line = temp.copy()
             lines.append(line)
             i += 1
 
         for l in lines:
-            self.image = cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 2)
+            self.image = cv2.line(self.image, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 2)
 
         return self.image
 
-    # detect cell
-    def find_form(self):
+    def find_vertex(self):
         """
-        find horizontal lines and vertical lines
+        update: 2020.3.20
+        find vertex of cell
         :return: array, image
         """
         if self.form_type() == 'C':
@@ -269,27 +375,8 @@ class CardDetect(CardOcr):
         else:
             image = self.draw_auxiliary()
 
-        # Image Binarization
-        binary = cv2.adaptiveThreshold(~image, 255,
-                                       cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, -10)
-        rows, cols = binary.shape
-        scale = 20
+        vertex, merge = find_form(image)
 
-        # detect horizontal line
-        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (cols // scale, 1))
-        eroded = cv2.erode(binary, kernel, iterations=2)
-        dilatedcol = cv2.dilate(eroded, kernel, iterations=2)
-
-        # detect vertical line
-        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (1, rows // scale))
-        eroded = cv2.erode(binary, kernel, iterations=2)
-        dilatedrow = cv2.dilate(eroded, kernel, iterations=2)
-
-        # get vertex
-        vertex = cv2.bitwise_and(dilatedcol, dilatedrow)
-
-        # plot cell
-        merge = cv2.add(dilatedcol, dilatedrow)
         return vertex, merge
 
     # get the coordinate for Burial form A
@@ -298,7 +385,7 @@ class CardDetect(CardOcr):
         get coordinate for burial form A
         :return: list
         """
-        a, b = self.find_form()
+        a, b = self.find_vertex()
         ys, xs = np.where(a > 0)
         # create coordinate
         x_list, y_list = [], []
@@ -329,10 +416,10 @@ class CardDetect(CardOcr):
         except IndexError:
             pass
 
-        return x_list, y_list
+        return x_list, y_list[:3]
 
     def get_coordinate_other(self):
-        a, b = self.find_form()
+        a, b = self.find_vertex()
         ys, xs = np.where(a > 0)
         # create coordinate
         x_list, y_list = [], []
@@ -393,7 +480,7 @@ class CardDetect(CardOcr):
 
         # plot rect:
         for rect in rects:
-            self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (255, 255, 255), 2)
+            self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 2)
 
         # print(rects)
         return rects
@@ -417,7 +504,7 @@ class CardDetect(CardOcr):
         rect_ret = rects[:8]
         # plot rect:
         for rect in rect_ret:
-            self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (255, 255, 255), 2)
+            self.image = cv2.rectangle(self.image, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 2)
 
         # print(rects)
         return rect_ret
@@ -428,7 +515,7 @@ class CardDetect(CardOcr):
         thresh = self.preproc_img()
         target = [0, 2, 3, 4, 5]
         file_name = ['Name', 'Date of interment', 'Section', 'Lot', 'GR']
-        special_char = '‘’,|-_<"=;«“&—]uv(é*O§¢!'
+        special_char = '‘’,|-_<"=;«“&—]uv(é*§¢!'
         file_type = [0, 0, 1, 1, 2]
         threshold = [-1, -1, -1, -1, -1]
         # rect1 = rects[target[0]]
@@ -471,7 +558,7 @@ class CardDetect(CardOcr):
         image = self.preproc_img()
         # print(rects)
         file_name = ['Name', 'Lot-Sec-Gr-Ter', 'Date of Burial']
-        special_char = '‘’,|-_<"=;«“&—]uv(é*O§¢!'
+        special_char = '‘’,|-_<"=;«“&—]uv(é*§¢!'
         result = {}
         temp = []
         for i in range(4):
@@ -504,7 +591,7 @@ class CardDetect(CardOcr):
         image = self.preproc_img()
         # print(rects)
         file_name = ['Name', 'Lot-Sec-Gr', 'Deed No. & Date', 'Comments']
-        special_char = '‘’,|-_<"=;«“&—]uv(é*O§¢!'
+        special_char = '‘’,|-_<"=;«“&—]uv(é*§¢!'
         result = {}
         temp = []
         for i in range(8):
@@ -580,8 +667,10 @@ def image_ocr(image):
 
     # card_type = card.card_type()
     """Eric adaption"""
-    card_type = card.card_type().lower()
-    image_ret['card_type'] = card_type
+    # card_type = card.card_type().lower()
+    """ update: 2020.3.20"""
+    card_type = card.card_type()
+    image_ret['card_type'] = card_type.lower()
 
     form = card.form_type()
     image_ret['form'] = form
