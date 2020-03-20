@@ -316,7 +316,7 @@ class CardDetect(CardOcr):
     """Adaption made by Eric"""
     def __init__(self, img):
         super().__init__(img)
-        self.image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        # self.image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
     def draw_auxiliary(self):
         """
