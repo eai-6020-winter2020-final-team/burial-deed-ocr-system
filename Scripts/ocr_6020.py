@@ -200,7 +200,7 @@ class CardOcr(object):
         :return: string
         """
         """Eric adaption"""
-        model_form = tf.keras.models.load_model(r'.\Scripts\model_form.h5')
+        model_form = tf.keras.models.load_model(r'./Scripts/model_form.h5')
         # model_form = load_model(r'.\Scripts\model_form.h5')
         # update: 2020.3.20
         text_list, form_list = self.format_input()
@@ -222,7 +222,7 @@ class CardOcr(object):
         :return: string
         """
         """Eric adaption"""
-        model_hw = tf.keras.models.load_model(r'.\Scripts\model_hw.h5')
+        model_hw = tf.keras.models.load_model(r'./Scripts/model_hw.h5')
         # model_hw = load_model(r'.\Scripts\model_hw.h5')
         # update: 2020.3.20
         text_list, form_list = self.format_input()
@@ -240,7 +240,7 @@ class CardOcr(object):
         :return: string
         """
         """Eric adaption"""
-        model_f = tf.keras.models.load_model(r'.\Scripts\model_f.h5')
+        model_f = tf.keras.models.load_model(r'./Scripts/model_f.h5')
         # model_f = load_model(r'.\Scripts\model_f.h5')
         # update: 2020.3.20
         text_list, form_list = self.format_input()
