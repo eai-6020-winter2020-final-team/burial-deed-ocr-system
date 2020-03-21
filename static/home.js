@@ -60,6 +60,7 @@ $(document).ready(() => {
 		var formData = new FormData();
 		var file = $("#file_uploader")[0].files[0];
 		formData.append("image_file", file);
+		selectButton.html("Processing, Please Wait");
 		$.ajax({
 			type: "POST",
 			url: "/upload/",
@@ -73,11 +74,15 @@ $(document).ready(() => {
 				var tr1st = $("#table_1stline");
 				trHead.empty();
 				tr1st.empty();
-				addColumnInTable(trHead, tr1st, jsonData)
+				addColumnInTable(trHead, tr1st, jsonData);
+				selectButton.html("Select Image File");
 			},
 			error: (jqXHR) => {
 				if(jqXHR.status === 500){
+					selectButton.html("Select Image File");
 					alert("ErrorCode 500: An error occurred when processing this image");
+				} else {
+					alert("ErrorCode" + jqXHR.status);
 				}
 			}
 		});

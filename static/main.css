@@ -11,14 +11,6 @@ img {
 	max-width: 600px;
 }
 
-input{
-    outline-style: none ;
-    border: 1px solid gray;
-    border-radius: 4px;
-    padding: 2px 0;
-    width: 100px;
-    font-size: 14px;
-}
 
 table {
 	border: 1px solid grey;
@@ -188,6 +180,14 @@ body {
 	display: none;
 }
 
+.edit_input {
+    outline-style: none ;
+    border: 1px solid gray;
+    border-radius: 4px;
+    padding: 2px 0;
+    width: 80px;
+    font-size: 14px;
+}
 
 .animated {
 	animation-name: anim;

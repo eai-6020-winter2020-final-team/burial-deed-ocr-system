@@ -30,6 +30,7 @@ def login():
 		login_user(user)
 		next_page = request.args.get('next')
 		if not next_page:
+			flash('Welcome to Cemetery Digital Management System')
 			next_page = url_for('home')
 		return redirect(next_page)
 	return render_template('login.html', title='Sign In', form=form)

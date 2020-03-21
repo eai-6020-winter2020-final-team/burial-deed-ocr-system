@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-	{% if title %}
-	<title>{{ title }} - Burial Deed Ocr System</title>
+	{% if navi %}
+	<title>{{ title }} - Cemetery Digital Management System</title>
 	{% else %}
-	<title>Welcome to Burial Deed Ocr System</title>
+	<title>Welcome to Cemetery Digital Management System</title>
 	{% endif %}
 	{% block head_content %}{% endblock %}
 </head>
 <body>
 <ul id="navigator">
-	<li><span id="navigator_span">Burial and Deed Recognition System</span></li>
+	<li><span id="navigator_span">Cemetery Digital Management System</span></li>
 
 	{% if current_user.is_anonymous %}
 	<li class="navigate_item selected_navi_item"><a href="{{ url_for('login') }}">Login</a></li>
@@ -44,7 +44,7 @@
 </ul>
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-<ul style="list-style-type: none;">
+<ul class="flash_msg" style="list-style-type: none;">
 	{% for message in messages %}
 	<li>{{ message }}</li>
 	{% endfor %}

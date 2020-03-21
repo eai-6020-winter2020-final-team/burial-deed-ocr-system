@@ -63,7 +63,7 @@ function clickEdit(){
 	let editTds = btnTd.prevUntil('.filename_td');
 	for(let editTd of editTds){
 		let tdVal = $(editTd).text();
-		let tmpInput = $('<input>').attr('type', 'text').attr('preVal', tdVal).val(tdVal);
+		let tmpInput = $('<input>').attr('type', 'text').attr('preVal', tdVal).val(tdVal).addClass('edit_input');
 		$(editTd).html(tmpInput);
 	}
 	$(this).hide();
