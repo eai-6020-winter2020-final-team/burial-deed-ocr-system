@@ -72,8 +72,7 @@ def img_to_arr(img, x, y):
     Convert image into array
     update: 2020.3.20
     """
-    if len(img.shape) > 2:
-        img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).convert('L')
+    img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)).convert('L')
     if img.size[0] != x or img.size[1] != y:
         img = img.resize((x, y))
 
