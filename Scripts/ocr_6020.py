@@ -185,12 +185,12 @@ class CardOcr(object):
         convert image into input data
         :return: np.array
         """
-        input_img_text = np.array(img_to_arr(self.image, 300, 300))
+        input_img_text = np.array(img_to_arr(self.image, 100, 100))
         vertex, img = find_form(self.gray)
-        input_img_form = np.array(img_to_arr(img, 300, 300))
+        input_img_form = np.array(img_to_arr(img, 200, 200))
 
-        input_img_text = input_img_text.reshape(1, 300, 300, 1)
-        input_img_form = input_img_form.reshape(1, 300, 300, 1)
+        input_img_text = input_img_text.reshape(1, 100, 100, 1)
+        input_img_form = input_img_form.reshape(1, 200, 200, 1)
 
         return input_img_text, input_img_form
 
@@ -204,7 +204,7 @@ class CardOcr(object):
         # model_form = load_model(r'.\Scripts\model_form.h5')
         # update: 2020.3.20
         text_list, form_list = self.format_input()
-        input_data = keras_input_data(form_list, 300, 300)
+        input_data = keras_input_data(form_list, 200, 200)
         ret = model_form.predict(input_data)
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
@@ -226,7 +226,7 @@ class CardOcr(object):
         # model_hw = load_model(r'.\Scripts\model_hw.h5')
         # update: 2020.3.20
         text_list, form_list = self.format_input()
-        input_data = keras_input_data(text_list, 300, 300)
+        input_data = keras_input_data(text_list, 100, 100)
         ret = model_hw.predict(input_data)
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
@@ -244,7 +244,7 @@ class CardOcr(object):
         # model_f = load_model(r'.\Scripts\model_f.h5')
         # update: 2020.3.20
         text_list, form_list = self.format_input()
-        input_data = keras_input_data(text_list, 300, 300)
+        input_data = keras_input_data(text_list, 100, 100)
         ret = model_f.predict(input_data)
         rel = np.where(ret[0] == np.max(ret[0]))
         if rel[0] == [0]:
