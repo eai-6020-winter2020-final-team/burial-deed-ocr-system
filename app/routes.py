@@ -159,10 +159,21 @@ def upload():
 		record_dic['filename'] = image_file.filename
 		record_dic['doctype'] = record_dic.pop('card_type')
 		record_dic['name'] = str(record_dic.pop('Name'))
-		record_dic['date'] = str(record_dic.pop('Deed No. & Date'))
-		record_dic['section'] = str(record_dic.pop('Lot-Sec-Gr'))
-		record_dic['lot'] = record_dic['section']
-		record_dic['gr'] = record_dic['section']
+		if record_dic['form'] == 'A':
+			record_dic['date'] = str(record_dic.pop('Date of interment'))
+			record_dic['section'] = str(record_dic.pop('Section'))
+			record_dic['lot'] = str(record_dic.pop('Lot'))
+			record_dic['gr'] = str(record_dic.pop('GR'))
+		elif record_dic['doctype'] == 'burial' and (record_dic['form'] == 'B' or record_dic['form'] == 'C'):
+			record_dic['date'] = str(record_dic.pop('Date of Burial'))
+			record_dic['section'] = str(record_dic.pop('Lot-Sec-Gr-Ter'))
+			record_dic['lot'] = ''
+			record_dic['gr'] = ''
+		else:
+			record_dic['date'] = str(record_dic.pop('Deed No. & Date'))
+			record_dic['section'] = str(record_dic.pop('Lot-Sec-Gr'))
+			record_dic['lot'] = ''
+			record_dic['deedno'] = ''
 
 		record = Record(record_dic)
 		if record.doctype == 'burial':

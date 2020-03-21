@@ -19,7 +19,7 @@ function fileSelected(file){
 	if(file.files && file.files[0]){
 		var reader = new FileReader();
 		reader.onload = (evt) => {
-			previewDiv.html($("<img>").attr("alt", "Selected Image").attr("src", evt.target.result));
+			previewDiv.html($("<img>").attr("alt", "Selected Image Cannot be Previewed").attr("src", evt.target.result));
 		};
 		reader.readAsDataURL(file.files[0]);
 	}
