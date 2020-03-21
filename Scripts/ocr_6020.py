@@ -655,8 +655,8 @@ def image_ocr(image):
     image_ret = {}
     card = CardDetect(image)
 
-    hw = card.flag_hw()
-    image_ret['handwriting'] = hw
+    # hw = card.flag_hw()
+    # image_ret['handwriting'] = hw
 
     fraction = card.flag_f()
     image_ret['fraction'] = fraction
