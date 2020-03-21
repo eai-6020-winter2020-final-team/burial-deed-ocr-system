@@ -185,7 +185,7 @@ class CardOcr(object):
         convert image into input data
         :return: np.array
         """
-        input_img_text = np.array(img_to_arr(self.image, 100, 100))
+        input_img_text = np.array(img_to_arr(self.gray, 100, 100))
         vertex, img = find_form(self.gray)
         input_img_form = np.array(img_to_arr(img, 200, 200))
 
