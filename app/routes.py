@@ -11,7 +11,7 @@ import hashlib
 from io import BytesIO
 from matplotlib import pyplot as plt
 
-from Scripts.ocr_6020 import image_ocr
+from Scripts.ocr_demo import image_ocr
 
 
 @app.route('/login/', methods=['GET', 'POST'])
