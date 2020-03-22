@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.externals import joblib
+import joblib
 from skimage import color
 from skimage.transform import resize
 from skimage.feature import hog
