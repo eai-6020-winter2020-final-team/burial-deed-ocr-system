@@ -711,7 +711,6 @@ def ocr_forma(image):
     """
     image_ret = {}
     card = CardDetect(image)
-    image_ret['file_name'] = image
 
     image_ret['handwriting'] = 'N'
 

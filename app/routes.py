@@ -11,7 +11,7 @@ import hashlib
 from io import BytesIO
 from matplotlib import pyplot as plt
 
-from Scripts.ocr_demo import image_ocr
+from Scripts.ocr_demo import ocr_forma
 
 
 @app.route('/login/', methods=['GET', 'POST'])
@@ -154,11 +154,11 @@ def upload():
 		img_stream = BytesIO(file_content)
 		img_type = image_file.filename.split('.')[-1]
 		img = plt.imread(img_stream, format=img_type)
-		record_dic = image_ocr(img)
+		record_dic = ocr_forma(img)
 		print(record_dic)
 		record_dic['id'] = file_hash
 		record_dic['filename'] = image_file.filename
-		record_dic['doctype'] = record_dic.pop('card_type')
+		record_dic['doctype'] = record_dic.pop('card_type').lower()
 		record_dic['name'] = str(record_dic.pop('Name'))
 		if record_dic['form'] == 'A':
 			record_dic['date'] = str(record_dic.pop('Date of interment'))
