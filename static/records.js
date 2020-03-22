@@ -4,7 +4,7 @@ function displayImage(a){
 	let imageDisplay = $('#image_display');
 	imageDisplay.attr('src', '');
 	let id = $(a).parent().parent().attr('id');
-	imageDisplay.attr('src', '/uploads/' + id);
+	imageDisplay.attr('src', '/getimage/' + id);
 	imageDisplay.fadeIn(150);
 	imageDisplay.click(() => {
 		imageDisplay.fadeOut(150);

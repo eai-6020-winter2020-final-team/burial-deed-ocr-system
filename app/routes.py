@@ -1,8 +1,11 @@
+import base64
+
 from app import app, db
 from app.forms import LoginForm, RegistrationForm
 from app.tables import User, Record, Burial, Deed
+from app.OcrDemo import image_ocr
 
-from flask import abort, flash, make_response, Response, redirect, render_template, request, url_for
+from flask import abort, flash, make_response, redirect, render_template, request, url_for, send_file
 from flask_login import login_user, logout_user, current_user, login_required
 
 import os
@@ -10,8 +13,8 @@ import json
 import hashlib
 from io import BytesIO
 from matplotlib import pyplot as plt
+from PIL import Image
 
-from Scripts.ocr_demo import ocr_forma
 
 
 @app.route('/login/', methods=['GET', 'POST'])
@@ -154,7 +157,7 @@ def upload():
 		img_stream = BytesIO(file_content)
 		img_type = image_file.filename.split('.')[-1]
 		img = plt.imread(img_stream, format=img_type)
-		record_dic = ocr_forma(img)
+		record_dic = image_ocr(img)
 		print(record_dic)
 		record_dic['id'] = file_hash
 		record_dic['filename'] = image_file.filename
@@ -193,8 +196,21 @@ def upload():
 	try:
 		result_dic = scan_image(f)
 	except KeyError:
-		return abort(500) # drop all error message
+		return abort(500)  # drop all error message
 	return json.dumps(result_dic)
+
+
+@app.route('/getimage/<image_id>/')
+@login_required
+def getimage(image_id):
+	try:
+		pil_image = Image.open('./uploads/' + image_id)
+	except FileNotFoundError:
+		return abort(404)
+	temp_bytes = BytesIO()
+	pil_image.save(temp_bytes, format='webp')
+	temp_bytes.seek(0)
+	return send_file(temp_bytes, mimetype='image/webp')
 
 
 @app.route('/log/')
