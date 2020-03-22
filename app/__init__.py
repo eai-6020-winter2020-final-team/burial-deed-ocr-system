@@ -27,6 +27,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 loginManager = LoginManager(app)
 loginManager.login_view = 'login'
+loginManager.login_message = ''
 
 from app import routes, tables
 

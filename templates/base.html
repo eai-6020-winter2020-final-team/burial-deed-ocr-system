@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
 <head>
 	{% if navi %}
 	<title>{{ title }} - Cemetery Digital Management System</title>
@@ -42,15 +42,7 @@
 	<li class="navigate_item"><a href="/">Upload Image</a></li>
 	{% endif %}
 </ul>
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<ul class="flash_msg" style="list-style-type: none;">
-	{% for message in messages %}
-	<li>{{ message }}</li>
-	{% endfor %}
-</ul>
-{% endif %}
-{% endwith %}
+
 {% block body_content %}{% endblock %}
 </body>
 </html>

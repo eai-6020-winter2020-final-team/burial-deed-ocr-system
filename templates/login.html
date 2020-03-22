@@ -1,27 +1,34 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<title>Welcome to Cemetery Digital Management System</title>
+	<script src="/static/jquery-3.4.1.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="/static/main.css">
+</head>
+<body>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class="flash_msg" style="list-style-type: none;">
+	{% for message in messages %}
+	<li>{{ message }}</li>
+	{% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
 
-{% block head_content %}
-<script src="/static/jquery-3.4.1.min.js"></script>
-<link rel="stylesheet" type="text/css" href="/static/main.css">
-{% endblock %}
+<h1 style="margin-top: 50px;" class="h3 mb-3 font-weight-normal">Welcome to Cemetery Digital Management System</h1>
 
-{% block body_content %}
-<form action="" method="post" novalidate>
+<form class="login_form" action="" method="post" novalidate>
 	{{ form.hidden_tag() }}
-	<p>
-		{{ form.username.label }}<br>
-		{{ form.username(size=32) }}<br>
-		{% for error in form.username.errors %}
-		<span style="color: red;">[{{ error }}]</span>
-		{% endfor %}
-	</p>
-	<p>
-		{{ form.password.label }}<br>
-		{{ form.password(size=32) }}<br>
-		{% for error in form.password.errors %}
-		<span style="color: red;">[{{ error }}]</span>
-		{% endfor %}
-	</p>
-	<p>{{ form.submit() }}</p>
+	{{ form.username(class_="login_form_control") }}
+	{% for error in form.username.errors %}
+	<span style="color: red;">[{{ error }}]</span>
+	{% endfor %}
+	{{ form.password(class_="login_form_control") }}
+	{% for error in form.password.errors %}
+	<span style="color: red;">[{{ error }}]</span>
+	{% endfor %}
+	{{ form.submit(id="login_btn") }}
 </form>
-{% endblock %}
+</body>
+</html>
