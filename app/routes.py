@@ -190,9 +190,10 @@ def upload():
 
 		app.logger.info(f'User [{current_user.username} : {current_user.id}] added record [{file_hash}]')
 		return record_dic
-
-	result_dic = scan_image(f)
-	# return abort(500)
+	try:
+		result_dic = scan_image(f)
+	except KeyError:
+		return abort(500) # drop all error message
 	return json.dumps(result_dic)
 
 
