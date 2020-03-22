@@ -18,10 +18,10 @@ app = Flask(
 app.config.from_object(config)
 
 handler = logging.FileHandler('changes.log')
-handler.setLevel(logging.INFO)
+handler.setLevel(logging.DEBUG)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 app.logger.addHandler(handler)
-
+app.logger.setLevel(logging.DEBUG)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

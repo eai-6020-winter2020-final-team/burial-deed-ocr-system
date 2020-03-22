@@ -6,8 +6,8 @@ import re
 import pandas as pd
 from matplotlib import pyplot as plt
 from PIL import Image
-import tensorflow as tf
-from tensorflow.keras import backend as K
+#import tensorflow as tf
+#from tensorflow.keras import backend as K
 
 
 def image_to_conf(image, text_type, n=0):
